@@ -6,9 +6,14 @@ authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10, <3.12"
 dagster = "^1.6.4"
 dagster-aws = "^0.22.4"
+polars = "^0.20.15"
+dagster-webserver = "^1.6.9"
+dagster-polars = "^0.22.9"
+fpl = "^0.6.35"
+aiohttp = "^3.9.3"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -29,7 +34,7 @@ line-length = 120
 line-length = 120
 
 exclude = ["jupyter_notebook_config.py"]
-select = [
+lint.select = [
     "E",  # pycodestyle errors (settings from FastAPI, thanks, @tiangolo!)
     "W",  # pycodestyle warnings
     "F",  # pyflakes
@@ -37,7 +42,7 @@ select = [
     "C",  # flake8-comprehensions
     "B",  # flake8-bugbear
 ]
-ignore = [
+lint.ignore = [
     "E501",  # line too long, handled by black
     "C901",  # too complex
 ]
@@ -48,3 +53,6 @@ relative-imports-order = "closest-to-furthest"
 extra-standard-library = ["typing"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 known-first-party = []
+
+[tool.dagster]
+module_name = "pointsball"
