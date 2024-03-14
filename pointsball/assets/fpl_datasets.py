@@ -36,3 +36,39 @@ async def fpl_player_histories(fpl_elements: pl.DataFrame) -> Output[pl.DataFram
             "max_round": int(player_histories_pldf["gameweek"].max()),
         },
     )
+
+
+@asset(
+    io_manager_key="polars_parquet_io_manager",
+    key_prefix=["raw", "fpl_fixtures"],
+)
+async def fpl_fixtures() -> Output[pl.DataFrame]:
+    async with aiohttp.ClientSession() as session:
+        fpl_session = FPL(session)
+        all_fixtures = await fpl_session.get_fixtures(return_json=True)
+    fixtures_pldf = pl.DataFrame(all_fixtures)
+    return Output(
+        fixtures_pldf,
+        metadata={
+            "num_rows": fixtures_pldf.shape[0],
+        },
+    )
+
+
+@asset(
+    io_manager_key="polars_parquet_io_manager",
+    key_prefix=["raw", "fpl_teams"],
+)
+async def fpl_teams() -> Output[pl.DataFrame]:
+    async with aiohttp.ClientSession() as session:
+        fpl_session = FPL(session)
+        all_teams = await fpl_session.get_teams(return_json=True)
+    teams_pldf = pl.DataFrame(all_teams).rename(
+        {
+            "id": "team_id",
+            "code": "team_code",
+            "name": "team_name",
+            "short_name": "team_name_short",
+        }
+    )
+    return Output(teams_pldf, metadata={"num_rows": teams_pldf.shape[0]})
