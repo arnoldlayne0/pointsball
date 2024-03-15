@@ -1,0 +1,4 @@
+team_code,draw,form,team_id,loss,team_name,played,points,position,team_name_short,strength,team_division,unavailable,win,strength_overall_home,strength_overall_away,strength_attack_home,strength_attack_away,strength_defence_home,strength_defence_away,pulse_id
+43,0,,13,0,Man City,0,0,0,MCI,5,,false,0,1355,1365,1350,1360,1360,1370,11
+4,0,,15,0,Newcastle,0,0,0,NEW,3,,false,0,1105,1280,1050,1210,1160,1355,23
+6,0,,18,0,Spurs,0,0,0,TOT,4,,false,0,1170,1230,1110,1150,1230,1310,21
