@@ -15,3 +15,8 @@ def fpl_player_histories_fixture():
 @pytest.fixture
 def fpl_teams_fixture():
     return pl.read_csv("tests/data/fpl_teams.csv")
+
+
+@pytest.fixture
+def fpl_dataset_fixture():
+    return pl.read_csv("tests/data/fpl_dataset.csv")

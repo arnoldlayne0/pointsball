@@ -3,6 +3,8 @@ import polars as pl
 from dagster import AssetIn, Output, asset
 from fpl import FPL
 
+from pointsball.schemas.fpl_schemas import FPL_DATASET_COLUMNS
+
 
 @asset(
     io_manager_key="polars_parquet_io_manager",
@@ -12,8 +14,8 @@ async def fpl_elements() -> Output[pl.DataFrame]:
     async with aiohttp.ClientSession() as session:
         fpl_session = FPL(session)
         players_json = await fpl_session.get_players(return_json=True)
-    players_pldf = pl.DataFrame(players_json).rename({"id": "player_id", "web_name": "player_name"})
-    return Output(players_pldf, metadata={"num_rows": players_pldf.shape[0]})
+    players_df = pl.DataFrame(players_json).rename({"id": "player_id", "web_name": "player_name"})
+    return Output(players_df, metadata={"num_rows": players_df.shape[0]})
 
 
 @asset(
@@ -27,13 +29,13 @@ async def fpl_player_histories(fpl_elements: pl.DataFrame) -> Output[pl.DataFram
         fpl_session = FPL(session)
         player_summaries = await fpl_session.get_player_summaries(player_ids=player_ids, return_json=True)
     histories = [hist for ps in player_summaries for hist in ps["history"]]
-    player_histories_pldf = pl.DataFrame(histories).rename({"element": "player_id", "round": "gameweek"})
+    player_histories_df = pl.DataFrame(histories).rename({"element": "player_id", "round": "gameweek"})
     return Output(
-        player_histories_pldf,
+        player_histories_df,
         metadata={
-            "num_rows": player_histories_pldf.shape[0],
-            "min_round": int(player_histories_pldf["gameweek"].min()),
-            "max_round": int(player_histories_pldf["gameweek"].max()),
+            "num_rows": player_histories_df.shape[0],
+            "min_round": int(player_histories_df["gameweek"].min()),
+            "max_round": int(player_histories_df["gameweek"].max()),
         },
     )
 
@@ -46,11 +48,11 @@ async def fpl_fixtures() -> Output[pl.DataFrame]:
     async with aiohttp.ClientSession() as session:
         fpl_session = FPL(session)
         all_fixtures = await fpl_session.get_fixtures(return_json=True)
-    fixtures_pldf = pl.DataFrame(all_fixtures)
+    fixtures_df = pl.DataFrame(all_fixtures)
     return Output(
-        fixtures_pldf,
+        fixtures_df,
         metadata={
-            "num_rows": fixtures_pldf.shape[0],
+            "num_rows": fixtures_df.shape[0],
         },
     )
 
@@ -63,7 +65,7 @@ async def fpl_teams() -> Output[pl.DataFrame]:
     async with aiohttp.ClientSession() as session:
         fpl_session = FPL(session)
         all_teams = await fpl_session.get_teams(return_json=True)
-    teams_pldf = pl.DataFrame(all_teams).rename(
+    teams_df = pl.DataFrame(all_teams).rename(
         {
             "id": "team_id",
             "code": "team_code",
@@ -71,4 +73,21 @@ async def fpl_teams() -> Output[pl.DataFrame]:
             "short_name": "team_name_short",
         }
     )
-    return Output(teams_pldf, metadata={"num_rows": teams_pldf.shape[0]})
+    return Output(teams_df, metadata={"num_rows": teams_df.shape[0]})
+
+
+@asset(
+    ins={
+        "fpl_elements": AssetIn("fpl_elements"),
+        "fpl_player_histories": AssetIn("fpl_player_histories"),
+        "fpl_teams": AssetIn("fpl_teams"),
+    },
+    io_manager_key="polars_parquet_io_manager",
+    key_prefix=["raw", "fpl_dataset"],
+)
+def fpl_dataset(fpl_elements: pl.DataFrame, fpl_player_histories: pl.DataFrame, fpl_teams: pl.DataFrame):
+    elements_to_join = fpl_elements[FPL_DATASET_COLUMNS["players"]]
+    player_histories_to_join = fpl_player_histories[FPL_DATASET_COLUMNS["player_histories"]]
+    teams_to_join = fpl_teams[FPL_DATASET_COLUMNS["teams"]]
+    fpl_dataset_df = elements_to_join.join(player_histories_to_join, on="player_id").join(teams_to_join, on="team_code")
+    return Output(fpl_dataset_df)
