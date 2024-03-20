@@ -14,6 +14,7 @@ dagster-webserver = "^1.6.9"
 dagster-polars = "^0.22.9"
 fpl = "^0.6.35"
 aiohttp = "^3.9.3"
+praw = "^7.7.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -47,7 +48,7 @@ lint.ignore = [
     "C901",  # too complex
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 order-by-type = true
 relative-imports-order = "closest-to-furthest"
 extra-standard-library = ["typing"]
