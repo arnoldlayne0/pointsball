@@ -2,7 +2,7 @@ import datetime
 from typing import Iterator
 
 import polars as pl
-from dagster import asset
+from dagster import AssetExecutionContext, asset
 from praw import Reddit
 from praw.models import Subreddit
 
@@ -25,9 +25,10 @@ TIME_FILTER_THRESHOLDS = {"day": 1, "week": 7, "month": 30}
 
 
 def generate_rate_my_team_submissions(
-    subreddit: Subreddit, comment_limit: int = 32, time_filter: str = "year"
+    subreddit: Subreddit, context: AssetExecutionContext, comment_limit: int = 32, time_filter: str = "year"
 ) -> Iterator:
     for s in subreddit.search(query="Rate My Team", time_filter=time_filter):
+        context.log.info(f"Fetching submission {s.id}.")
         s.comments.replace_more(limit=comment_limit)
         for c in s.comments.list():
             yield (
@@ -46,13 +47,13 @@ def generate_rate_my_team_submissions(
 
 
 @asset()
-def reddit_rate_my_team(reddit_credentials: RedditResource):
-
+def reddit_rate_my_team(context: AssetExecutionContext, reddit_credentials: RedditResource):
     today = datetime.date.today()
     try:
-        cur_lazy_rmt_df = pl.read_parquet("data/raw/reddit_rmt_submissions")
-        last_date_partition = cur_lazy_rmt_df.select("date").max().item()
-        days_since_last_partition = (today - last_date_partition).days
+        cur_lazy_rmt_df = pl.scan_parquet("data/raw/reddit_rmt_submissions/*/*.parquet")
+        last_date_partition = cur_lazy_rmt_df.select("date").max().collect().item()
+        last_date_partition_date = datetime.datetime.strptime(last_date_partition, "%Y-%m-%d").date()
+        days_since_last_partition = (today - last_date_partition_date).days
         for filter_name, threshold in TIME_FILTER_THRESHOLDS.items():
             if days_since_last_partition <= threshold:
                 time_filter = filter_name
@@ -61,8 +62,8 @@ def reddit_rate_my_team(reddit_credentials: RedditResource):
             time_filter = "year"
     except FileNotFoundError:
         time_filter = "year"
-        last_date_partition = today - datetime.timedelta(days=365)
-
+        last_date_partition_date = today - datetime.timedelta(days=365)
+    context.log.info(f"Fetching submissions from the last {time_filter}.")
     reddit = Reddit(
         client_id=reddit_credentials.client_id,
         client_secret=reddit_credentials.secret,
@@ -72,7 +73,7 @@ def reddit_rate_my_team(reddit_credentials: RedditResource):
     )
     fpl_subreddit = reddit.subreddit("FantasyPL")
     lazy_rmt_df = pl.LazyFrame(
-        generate_rate_my_team_submissions(fpl_subreddit, time_filter=time_filter), schema=RMT_SCHEMA
+        generate_rate_my_team_submissions(fpl_subreddit, context=context, time_filter=time_filter), schema=RMT_SCHEMA
     )
     lazy_rmt_df = (
         lazy_rmt_df.with_columns(
@@ -81,12 +82,9 @@ def reddit_rate_my_team(reddit_credentials: RedditResource):
             pl.col("comment_parent_id").str.starts_with("t3").alias("top_level_comment"),
         )
         .filter(pl.col("submission_date") == pl.col("comment_date"))
-        .filter(pl.col("submission_date") > last_date_partition)
+        .filter(pl.col("submission_date") > last_date_partition_date)
         .drop(["comment_date"])
     )
     lazy_rmt_df.collect().rename({"submission_date": "date"}).write_parquet(
-        file="data/raw/reddit_rmt_submissions",
-        use_pyarrow=True,
-        pyarrow_options={"partition_cols": ["date"]},
-        mode="append",
+        file="data/raw/reddit_rmt_submissions", use_pyarrow=True, pyarrow_options={"partition_cols": ["date"]}
     )
