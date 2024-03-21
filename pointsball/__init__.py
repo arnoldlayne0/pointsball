@@ -16,6 +16,8 @@ defs = Definitions(
             client_id=EnvVar("REDDIT_CLIENT_ID"),
             secret=EnvVar("REDDIT_SECRET"),
             user_agent=EnvVar("REDDIT_USER_AGENT"),
+            username=EnvVar("REDDIT_USERNAME"),
+            password=EnvVar("REDDIT_PASSWORD"),
         ),
     },
 )
