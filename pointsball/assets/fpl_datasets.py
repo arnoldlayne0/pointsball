@@ -48,7 +48,7 @@ async def fpl_fixtures() -> Output[pl.DataFrame]:
     async with aiohttp.ClientSession() as session:
         fpl_session = FPL(session)
         all_fixtures = await fpl_session.get_fixtures(return_json=True)
-    fixtures_df = pl.DataFrame(all_fixtures)
+    fixtures_df = pl.DataFrame(all_fixtures).rename({"event": "gameweek"})
     return Output(
         fixtures_df,
         metadata={
