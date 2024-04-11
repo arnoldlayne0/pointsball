@@ -36,6 +36,13 @@ class TeamIdEnum(Enum):
     gameweek = "gameweek"
 
 
+class TeamFormStatsEnum(Enum):
+    expected_goals = "expected_goals"
+    expected_goals_conceded = "expected_goals_conceded"
+    goals_scored = "goals_scored"
+    goals_conceded = "goals_conceded"
+
+
 class StatelessPlayerFeaturesEnum(Enum):
     element_type = "element_type"
     chance_of_playing_next_round = "chance_of_playing_next_round"
