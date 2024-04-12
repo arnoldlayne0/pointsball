@@ -29,7 +29,9 @@ async def fpl_player_histories(fpl_elements: pl.DataFrame) -> Output[pl.DataFram
         fpl_session = FPL(session)
         player_summaries = await fpl_session.get_player_summaries(player_ids=player_ids, return_json=True)
     histories = [hist for ps in player_summaries for hist in ps["history"]]
-    player_histories_df = pl.DataFrame(histories).rename({"element": "player_id", "round": "gameweek"})
+    player_histories_df = pl.DataFrame(histories).rename(
+        {"element": "player_id", "round": "gameweek", "fixture": "fixture_id"}
+    )
     return Output(
         player_histories_df,
         metadata={
@@ -48,7 +50,7 @@ async def fpl_fixtures() -> Output[pl.DataFrame]:
     async with aiohttp.ClientSession() as session:
         fpl_session = FPL(session)
         all_fixtures = await fpl_session.get_fixtures(return_json=True)
-    fixtures_df = pl.DataFrame(all_fixtures).rename({"event": "gameweek"})
+    fixtures_df = pl.DataFrame(all_fixtures).rename({"event": "gameweek", "id": "fixture_id"})
     return Output(
         fixtures_df,
         metadata={
@@ -81,13 +83,22 @@ async def fpl_teams() -> Output[pl.DataFrame]:
         "fpl_elements": AssetIn("fpl_elements"),
         "fpl_player_histories": AssetIn("fpl_player_histories"),
         "fpl_teams": AssetIn("fpl_teams"),
+        "fpl_fixtures": AssetIn("fpl_fixtures"),
     },
     io_manager_key="polars_parquet_io_manager",
     key_prefix=["raw", "fpl_dataset"],
 )
-def fpl_dataset(fpl_elements: pl.DataFrame, fpl_player_histories: pl.DataFrame, fpl_teams: pl.DataFrame):
+def fpl_dataset(
+    fpl_elements: pl.DataFrame, fpl_player_histories: pl.DataFrame, fpl_teams: pl.DataFrame, fpl_fixtures: pl.DataFrame
+):
     elements_to_join = fpl_elements[FPL_DATASET_COLUMNS["players"]]
     player_histories_to_join = fpl_player_histories[FPL_DATASET_COLUMNS["player_histories"]]
     teams_to_join = fpl_teams[FPL_DATASET_COLUMNS["teams"]]
-    fpl_dataset_df = elements_to_join.join(player_histories_to_join, on="player_id").join(teams_to_join, on="team_code")
+    fixtures_to_join = fpl_fixtures.filter(pl.col("finished")).select(FPL_DATASET_COLUMNS["fixtures"])
+    fpl_dataset_df = (
+        elements_to_join.join(player_histories_to_join, on="player_id")
+        .join(teams_to_join, on="team_code")
+        .join(fixtures_to_join, on="fixture_id")
+    )
+
     return Output(fpl_dataset_df)

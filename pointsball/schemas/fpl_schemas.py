@@ -36,15 +36,16 @@ FPL_DATASET_PLAYER_HISTORIES_COLUMNS = [
     "creativity",
     "threat",
     "ict_index",
-    "expected_goals",
-    "expected_assists",
-    "expected_goal_involvements",
-    "expected_goals_conceded",
+    "expected_goals",  # read as string currently
+    "expected_assists",  # read as string currently
+    "expected_goal_involvements",  # read as string currently
+    "expected_goals_conceded",  # read as string currently
     "value",
     "transfers_balance",
     "selected",
     "transfers_in",
     "transfers_out",
+    "fixture_id",
 ]
 FPL_DATASET_TEAMS_COLUMNS = [
     "team_code",
@@ -52,8 +53,16 @@ FPL_DATASET_TEAMS_COLUMNS = [
     "team_name",
     "team_name_short",
 ]
+FPL_DATASET_FIXTURE_COLUMNS = [
+    "team_h",
+    "team_a",
+    "team_h_difficulty",
+    "team_a_difficulty",
+    "fixture_id",
+]
 FPL_DATASET_COLUMNS = {
     "players": FPL_DATASET_PLAYERS_COLUMNS,
     "player_histories": FPL_DATASET_PLAYER_HISTORIES_COLUMNS,
     "teams": FPL_DATASET_TEAMS_COLUMNS,
+    "fixtures": FPL_DATASET_FIXTURE_COLUMNS,
 }
