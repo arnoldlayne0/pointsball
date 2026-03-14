@@ -227,16 +227,5 @@ def optimize(
     typer.echo(format_squad(result, player_pool))
 
 
-@app.command()
-def fetch_reddit(
-    data_dir: Path = typer.Option(Path("data/raw"), "--data-dir", "-d", help="Directory to write parquet files."),
-) -> None:
-    """Fetch Rate My Team submissions from r/FantasyPL."""
-    from pointsball.data.reddit_client import RedditCredentials, fetch_rate_my_team
-
-    credentials = RedditCredentials.from_env()
-    fetch_rate_my_team(credentials, data_dir)
-
-
 if __name__ == "__main__":
     app()

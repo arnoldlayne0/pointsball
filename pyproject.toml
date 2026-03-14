@@ -7,7 +7,6 @@ dependencies = [
     "polars>=1.0",
     "fpl>=0.6.35",
     "aiohttp>=3.9.3",
-    "praw>=7.7.1",
     "python-dotenv>=1.0",
     "typer>=0.24.1",
     "scikit-learn>=1.7.2",

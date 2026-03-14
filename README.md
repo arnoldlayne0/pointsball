@@ -84,11 +84,6 @@ Create a `.env` file in the project root:
 ```env
 # Required: your FPL team ID (visible in the URL on the FPL website)
 FPL_TEAM_ID=123456
-
-# Required for reddit data fetching only
-REDDIT_CLIENT_ID=...
-REDDIT_CLIENT_SECRET=...
-REDDIT_USER_AGENT=...
 ```
 
 Your FPL team ID is in the URL when you view your team: `https://fantasy.premierleague.com/entry/123456/`
@@ -162,14 +157,6 @@ uv run pointsball show-team
 
 Prints your current FPL squad, bank balance, and estimated free transfers for next week. Reads from the public FPL API — no authentication required.
 
-#### Fetch Reddit data
-
-```bash
-uv run pointsball fetch-reddit
-```
-
-Fetches Rate My Team submissions from r/FantasyPL and stores them as partitioned parquet under `data/raw/reddit/`. Requires Reddit API credentials in `.env`.
-
 ---
 
 ## Data flow
@@ -217,4 +204,3 @@ uv run pre-commit install
 
 - **Double gameweek handling** — players with two fixtures in one GW are represented as duplicate rows. Rolling windows are computed on gameweek number, so double GWs slightly inflate feature values.
 - **Apply transfers** — submitting transfers via the FPL API requires an authenticated session. The login endpoint is behind Datadome bot-detection, which blocks all programmatic HTTP clients. Transfer submission is not currently supported.
-- **Reddit signal** — mention counts and sentiment from r/FantasyPL are fetched but not yet wired into the ML model.
