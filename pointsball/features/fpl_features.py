@@ -21,7 +21,7 @@ class GroupRollingAvgFeatures:
         ).agg(
             [
                 pl.mean(statistic).alias(feature_name)
-                for statistic, feature_name in zip(self.statistic, self.feature_names)
+                for statistic, feature_name in zip(self.statistic, self.feature_names, strict=True)
             ]
         )
         return features
@@ -73,14 +73,13 @@ def generate_features_dataset(fpl_dataset_df: pl.DataFrame):
         .join(player_form_features_home_away, on=["player_id", "gameweek", "was_home"], how="left")
         .join(team_form_features, on=["team_id", "gameweek"], how="left")
         .join(team_form_features_home_away, on=["team_id", "gameweek", "was_home"], how="left")
-        # Opponent team stats
+        # Opponent team stats — Polars 1.x coalesces right-side join keys, so no manual drop needed
         .join(
             team_form_features.rename({c: f"{c}_opponent" for c in team_form_features.columns}),
             left_on=["opponent_team", "gameweek"],
             right_on=["team_id_opponent", "gameweek_opponent"],
             how="left",
         )
-        .drop(["team_id_opponent", "gameweek_opponent"])
         .join(
             team_form_features_home_away.with_columns(~pl.col("was_home")).rename(
                 {c: f"{c}_opponent" for c in team_form_features_home_away.columns}
@@ -89,13 +88,11 @@ def generate_features_dataset(fpl_dataset_df: pl.DataFrame):
             right_on=["team_id_opponent", "gameweek_opponent", "was_home_opponent"],
             how="left",
         )
-        .drop(["team_id_opponent", "gameweek_opponent"])
         .join(
             team_form_features_position.rename({c: f"{c}_opponent" for c in team_form_features_position.columns}),
             left_on=["opponent_team", "gameweek", "element_type"],
             right_on=["team_id_opponent", "gameweek_opponent", "element_type_opponent"],
             how="left",
         )
-        .drop(["team_id_opponent", "gameweek_opponent"])
     )
     return features_df

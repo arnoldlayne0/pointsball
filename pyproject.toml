@@ -9,7 +9,14 @@ dependencies = [
     "aiohttp>=3.9.3",
     "praw>=7.7.1",
     "python-dotenv>=1.0",
+    "typer>=0.24.1",
+    "scikit-learn>=1.7.2",
+    "ortools>=9.15.6755",
+    "requests>=2.32.5",
 ]
+
+[project.scripts]
+pointsball = "pointsball.__main__:app"
 
 [project.optional-dependencies]
 dev = [
@@ -40,6 +47,7 @@ lint.select = [
 lint.ignore = [
     "E501",
     "C901",
+    "B008",  # typer.Option in function defaults is the intended Typer pattern
 ]
 
 [tool.ruff.lint.isort]

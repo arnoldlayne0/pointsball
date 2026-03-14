@@ -5,3 +5,4 @@ __pycache__/
 
 /data/
 /tmp*
+.fpl_cookies.json
