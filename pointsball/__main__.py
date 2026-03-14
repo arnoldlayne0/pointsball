@@ -83,11 +83,16 @@ def run(
         Path("data/predictions"), "--predictions-dir", "-p", help="Directory for predictions."
     ),
     use_my_team: bool = typer.Option(False, "--use-my-team", help="Optimise transfers against your current FPL squad."),
+    horizon: int = typer.Option(5, "--horizon", "-n", help="Number of upcoming gameweeks to optimise over."),
+    discount: float = typer.Option(
+        0.9, "--discount", help="Discount factor per GW (e.g. 0.9 means GW+1 worth 90%% of GW+0)."
+    ),
 ) -> None:
     """Run the full pipeline: fetch → train → predict → optimize.
 
     The recommended weekly workflow. Use --use-my-team to get transfer
     recommendations for your actual squad instead of a fresh squad selection.
+    Points in future GWs are discounted: GW+k is weighted by discount^k.
     """
     import polars as pl
 
@@ -115,8 +120,8 @@ def run(
     predictions_dir.mkdir(parents=True, exist_ok=True)
     predictions_df.write_parquet(predictions_dir / "predictions.parquet")
 
-    typer.echo("── Step 4/4: Optimizing squad ───────────────────────────")
-    player_pool = prepare_player_pool(predictions_df, elements_df)
+    typer.echo(f"── Step 4/4: Optimizing squad (horizon={horizon}, discount={discount}) ──")
+    player_pool = prepare_player_pool(predictions_df, elements_df, horizon=horizon, discount=discount)
 
     if use_my_team:
         from pointsball.data.fpl_account import fetch_my_team
@@ -168,8 +173,16 @@ def optimize(
     bank: int = typer.Option(
         0, "--bank", "-b", help="Extra funds in bank in tenths of millions. Ignored when --use-my-team is set."
     ),
+    horizon: int = typer.Option(5, "--horizon", "-n", help="Number of upcoming gameweeks to optimise over."),
+    discount: float = typer.Option(
+        0.9, "--discount", help="Discount factor per GW (e.g. 0.9 means GW+1 worth 90%% of GW+0)."
+    ),
 ) -> None:
-    """Select an optimal squad or optimize transfers using predicted points."""
+    """Select an optimal squad or optimize transfers using predicted points.
+
+    Points in future GWs are discounted: GW+k is weighted by discount^k.
+    Use --horizon to control how many gameweeks ahead to consider.
+    """
     import polars as pl
 
     from pointsball.optimizer.squad import (
@@ -190,7 +203,7 @@ def optimize(
 
     predictions_df = pl.read_parquet(predictions_path)
     elements_df = pl.read_parquet(data_dir / "fpl_elements.parquet")
-    player_pool = prepare_player_pool(predictions_df, elements_df)
+    player_pool = prepare_player_pool(predictions_df, elements_df, horizon=horizon, discount=discount)
 
     if use_my_team:
         from pointsball.data.fpl_account import fetch_my_team

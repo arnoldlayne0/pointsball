@@ -46,13 +46,28 @@ class OptimizedSquad:
 def prepare_player_pool(
     predictions_df: pl.DataFrame,
     elements_df: pl.DataFrame,
+    horizon: int = 5,
+    discount: float = 0.9,
 ) -> pl.DataFrame:
-    """Aggregate predicted points across GWs and join with cost/position data.
+    """Aggregate discounted predicted points over the next `horizon` gameweeks.
+
+    Points in GW+k are multiplied by discount^k (k=0 for the next GW, k=1 for
+    the one after, etc.), so near-term fixtures are weighted more heavily.
 
     Returns a DataFrame with columns:
         player_id, player_name, predicted_points, cost, element_type, team_id
     """
-    points_by_player = predictions_df.group_by("player_id").agg(pl.col("predicted_points").sum())
+    min_gw = predictions_df["gameweek"].min()
+    max_gw = min_gw + horizon - 1
+
+    points_by_player = (
+        predictions_df.filter(pl.col("gameweek") <= max_gw)
+        .with_columns(
+            (pl.col("predicted_points") * pl.lit(discount).pow(pl.col("gameweek") - min_gw)).alias("discounted_points")
+        )
+        .group_by("player_id")
+        .agg(pl.col("discounted_points").sum().alias("predicted_points"))
+    )
     player_info = elements_df.select(
         ["player_id", "player_name", "now_cost", "element_type", pl.col("team").alias("team_id")]
     ).rename({"now_cost": "cost"})
