@@ -6,3 +6,6 @@ __pycache__/
 /data/
 /tmp*
 .fpl_cookies.json
+.claude/
+progress.md
+CLAUDE.md
