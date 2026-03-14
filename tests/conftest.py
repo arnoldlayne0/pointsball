@@ -9,12 +9,17 @@ def fpl_elements_fixture():
 
 @pytest.fixture
 def fpl_player_histories_fixture():
-    return pl.read_csv("tests/data/fpl_player_histories.csv")
+    return pl.read_csv("tests/data/fpl_player_histories.csv").rename({"fixture": "fixture_id"})
 
 
 @pytest.fixture
 def fpl_teams_fixture():
     return pl.read_csv("tests/data/fpl_teams.csv")
+
+
+@pytest.fixture
+def fpl_fixtures_fixture():
+    return pl.read_parquet("tests/data/fpl_fixtures.parquet")
 
 
 @pytest.fixture

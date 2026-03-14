@@ -1,51 +1,45 @@
-[tool.poetry]
+[project]
 name = "pointsball"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
-readme = "README.md"
+description = "Automated Fantasy Premier League team management"
+requires-python = ">=3.10,<3.12"
+dependencies = [
+    "polars>=1.0",
+    "fpl>=0.6.35",
+    "aiohttp>=3.9.3",
+    "praw>=7.7.1",
+    "python-dotenv>=1.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10, <3.12"
-dagster = "^1.6.4"
-dagster-aws = "^0.22.4"
-polars = "^0.20.15"
-dagster-webserver = "^1.6.9"
-dagster-polars = "^0.22.9"
-fpl = "^0.6.35"
-aiohttp = "^3.9.3"
-praw = "^7.7.1"
-
-
-[tool.poetry.group.dev.dependencies]
-black = "^24.2.0"
-ruff = "^0.2.1"
-pytest = "^8.0.0"
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.2.1",
+    "black>=24.2.0",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.black]
 skip-string-normalization = true
 line-length = 120
 
 [tool.ruff]
-# Same as Black.
 line-length = 120
-
 exclude = ["jupyter_notebook_config.py"]
 lint.select = [
-    "E",  # pycodestyle errors (settings from FastAPI, thanks, @tiangolo!)
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "C",  # flake8-comprehensions
-    "B",  # flake8-bugbear
+    "E",
+    "W",
+    "F",
+    "I",
+    "C",
+    "B",
 ]
 lint.ignore = [
-    "E501",  # line too long, handled by black
-    "C901",  # too complex
+    "E501",
+    "C901",
 ]
 
 [tool.ruff.lint.isort]
@@ -55,5 +49,8 @@ extra-standard-library = ["typing"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 known-first-party = []
 
-[tool.dagster]
-module_name = "pointsball"
+[dependency-groups]
+dev = [
+    "black>=26.3.1",
+    "ruff>=0.15.6",
+]
